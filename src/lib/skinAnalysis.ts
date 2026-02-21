@@ -1,18 +1,179 @@
+// === TYPES ===
+
+export type SkinDepth = "very-light" | "light" | "light-medium" | "medium" | "tan" | "deep" | "very-deep";
+export type Undertone = "warm" | "cool" | "neutral" | "olive";
+export type TextureType = "smooth" | "normal" | "rough" | "combination";
+export type HydrationLevel = "well-hydrated" | "normal" | "dehydrated";
+export type Rating = "Worst" | "Bad" | "Better" | "Good" | "Excellent";
+
+export interface ShadeCode {
+  code: string;
+  label: string;
+}
+
+export interface ScoreWithRating {
+  score: number;       // 1-10
+  rating: Rating;
+}
+
 export interface SkinAnalysisResult {
-  undertone: "warm" | "cool" | "neutral";
+  // Depth (Level 1)
+  depth: SkinDepth;
+  depthLabel: string;
+  depthConcerns: string;
+  foundationNote: string;
+
+  // Undertone (Level 2)
+  undertone: Undertone;
   undertoneConfidence: number;
-  texture: "smooth" | "normal" | "rough" | "combination";
-  textureScore: number;
-  hydration: "well-hydrated" | "normal" | "dehydrated";
-  hydrationScore: number;
+  veinColor: string;
+  jewelryPreference: string;
+  sunReaction: string;
+  foundationBase: string;
+
+  // Shade Matrix (Level 3)
+  shadeCode: ShadeCode;
+
+  // Texture & Hydration
+  texture: TextureType;
+  hydration: HydrationLevel;
+
+  // Scores (1-10 with remarks)
+  overallScore: ScoreWithRating;
+  textureScore: ScoreWithRating;
+  hydrationScore: ScoreWithRating;
+  undertoneScore: ScoreWithRating;
+  depthScore: ScoreWithRating;
+
   dominantHue: string;
   recommendations: string[];
 }
 
+// === HELPERS ===
+
+function getRating(score: number): Rating {
+  if (score >= 9) return "Excellent";
+  if (score >= 7) return "Good";
+  if (score >= 5) return "Better";
+  if (score >= 3) return "Bad";
+  return "Worst";
+}
+
+function makeScore(raw: number): ScoreWithRating {
+  const score = Math.max(1, Math.min(10, Math.round(raw)));
+  return { score, rating: getRating(score) };
+}
+
+// === DEPTH CLASSIFICATION ===
+
+interface DepthInfo {
+  depth: SkinDepth;
+  label: string;
+  concerns: string;
+  foundationNote: string;
+}
+
+function classifyDepth(brightness: number): DepthInfo {
+  if (brightness > 210) return { depth: "very-light", label: "Porcelain / Ivory", concerns: "Redness, pink patches", foundationNote: "Avoid overly pink bases" };
+  if (brightness > 185) return { depth: "light", label: "Fair beige", concerns: "Oxidation issues", foundationNote: "Neutral undertones sell best" };
+  if (brightness > 160) return { depth: "light-medium", label: "Wheatish light", concerns: "Looks grey in wrong shade", foundationNote: "Balance yellow & peach" };
+  if (brightness > 135) return { depth: "medium", label: "Golden beige", concerns: "Turns orange easily", foundationNote: "Undertone precision critical" };
+  if (brightness > 105) return { depth: "tan", label: "Warm brown", concerns: "Ashy cast common", foundationNote: "Avoid white-based pigments" };
+  if (brightness > 75) return { depth: "deep", label: "Rich brown", concerns: "Red/grey mismatch", foundationNote: "Red & golden balance needed" };
+  return { depth: "very-deep", label: "Espresso / cocoa", concerns: "Flashback risk", foundationNote: "Avoid high titanium dioxide" };
+}
+
+// === UNDERTONE ANALYSIS ===
+
+interface UndertoneInfo {
+  undertone: Undertone;
+  confidence: number;
+  veinColor: string;
+  jewelryPreference: string;
+  sunReaction: string;
+  foundationBase: string;
+}
+
+function classifyUndertone(avgR: number, avgG: number, avgB: number): UndertoneInfo {
+  const warmScore = (avgR - avgB) / 255;
+  const greenCast = (avgG - (avgR + avgB) / 2) / 255;
+
+  // Olive detection: green cast with moderate warmth
+  if (greenCast > 0.03 && warmScore > 0.02 && warmScore < 0.12) {
+    return {
+      undertone: "olive",
+      confidence: Math.min(95, 60 + greenCast * 400),
+      veinColor: "Hard to detect, slightly green cast",
+      jewelryPreference: "Gold looks soft",
+      sunReaction: "Tans deeply",
+      foundationBase: "Green-balanced yellow base",
+    };
+  }
+
+  if (warmScore > 0.08) {
+    return {
+      undertone: "warm",
+      confidence: Math.min(95, 60 + warmScore * 200),
+      veinColor: "Greenish veins",
+      jewelryPreference: "Gold suits better",
+      sunReaction: "Tans easily",
+      foundationBase: "Yellow / Golden base",
+    };
+  }
+
+  if (warmScore < -0.03) {
+    return {
+      undertone: "cool",
+      confidence: Math.min(95, 60 + Math.abs(warmScore) * 200),
+      veinColor: "Bluish veins",
+      jewelryPreference: "Silver suits better",
+      sunReaction: "Burns easily",
+      foundationBase: "Pink / Red base",
+    };
+  }
+
+  return {
+    undertone: "neutral",
+    confidence: Math.min(90, 55 + (1 - Math.abs(warmScore) * 10) * 30),
+    veinColor: "Blue-green veins",
+    jewelryPreference: "Both look good",
+    sunReaction: "Mild tan",
+    foundationBase: "Balanced base",
+  };
+}
+
+// === SHADE MATRIX ===
+
+function getShadeCode(depth: SkinDepth, undertone: Undertone): ShadeCode {
+  const depthMap: Record<SkinDepth, [string, number]> = {
+    "very-light": ["VL", 1],
+    "light": ["L", 2],
+    "light-medium": ["LM", 3],
+    "medium": ["M", 4],
+    "tan": ["T", 5],
+    "deep": ["D", 6],
+    "very-deep": ["VD", 7],
+  };
+  const undertoneMap: Record<Undertone, string> = {
+    warm: "W",
+    neutral: "N",
+    cool: "C",
+    olive: "O",
+  };
+
+  const [dCode, dNum] = depthMap[depth];
+  const uCode = undertoneMap[undertone];
+  const code = `${dCode}${uCode} ${dNum}.${Math.floor(Math.random() * 3)}`;
+  const label = `${dCode.replace("VL", "Very Light").replace("LM", "Light-Medium").replace("VD", "Very Deep")} ${undertone.charAt(0).toUpperCase() + undertone.slice(1)}`;
+
+  return { code, label };
+}
+
+// === MAIN ANALYSIS ===
+
 export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
   const { data, width, height } = imageData;
 
-  // Sample center region (face area)
   const cx = Math.floor(width / 2);
   const cy = Math.floor(height / 2);
   const sampleRadius = Math.min(width, height) * 0.25;
@@ -34,7 +195,6 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
       const i = (py * width + px) * 4;
       const r = data[i], g = data[i + 1], b = data[i + 2];
 
-      // Skip very dark or very bright pixels
       const brightness = (r + g + b) / 3;
       if (brightness < 30 || brightness > 240) continue;
 
@@ -43,7 +203,6 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
       totalB += b;
       samples++;
 
-      // Texture: check local variance with neighbor
       if (px + 2 < width) {
         const ni = (py * width + (px + 2)) * 4;
         const nr = data[ni], ng = data[ni + 1], nb = data[ni + 2];
@@ -54,96 +213,93 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
   }
 
   if (samples === 0) {
-    return {
-      undertone: "neutral",
-      undertoneConfidence: 50,
-      texture: "normal",
-      textureScore: 50,
-      hydration: "normal",
-      hydrationScore: 50,
-      dominantHue: "N/A",
-      recommendations: ["Try taking the photo in better lighting."],
-    };
+    return getDefaultResult();
   }
 
   const avgR = totalR / samples;
   const avgG = totalG / samples;
   const avgB = totalB / samples;
+  const avgBrightness = (avgR + avgG + avgB) / 3;
 
-  // Undertone analysis
-  const warmScore = (avgR - avgB) / 255;
-  const greenBalance = (avgG - (avgR + avgB) / 2) / 255;
+  // Level 1: Depth
+  const depthInfo = classifyDepth(avgBrightness);
 
-  let undertone: "warm" | "cool" | "neutral";
-  let undertoneConfidence: number;
+  // Level 2: Undertone
+  const undertoneInfo = classifyUndertone(avgR, avgG, avgB);
 
-  if (warmScore > 0.08) {
-    undertone = "warm";
-    undertoneConfidence = Math.min(95, 60 + warmScore * 200);
-  } else if (warmScore < -0.03) {
-    undertone = "cool";
-    undertoneConfidence = Math.min(95, 60 + Math.abs(warmScore) * 200);
-  } else {
-    undertone = "neutral";
-    undertoneConfidence = Math.min(90, 55 + (1 - Math.abs(warmScore) * 10) * 30);
-  }
+  // Level 3: Shade
+  const shadeCode = getShadeCode(depthInfo.depth, undertoneInfo.undertone);
 
-  // Texture analysis from variance
+  // Texture
   const avgVariance = variances.length > 0
-    ? variances.reduce((a, b) => a + b, 0) / variances.length
-    : 15;
+    ? variances.reduce((a, b) => a + b, 0) / variances.length : 15;
 
-  let texture: "smooth" | "normal" | "rough" | "combination";
-  let textureScore: number;
+  let texture: TextureType;
+  let textureRaw: number;
+  if (avgVariance < 8) { texture = "smooth"; textureRaw = 9; }
+  else if (avgVariance < 18) { texture = "normal"; textureRaw = 7; }
+  else if (avgVariance < 30) { texture = "combination"; textureRaw = 5; }
+  else { texture = "rough"; textureRaw = 3; }
 
-  if (avgVariance < 8) {
-    texture = "smooth";
-    textureScore = 90;
-  } else if (avgVariance < 18) {
-    texture = "normal";
-    textureScore = 70;
-  } else if (avgVariance < 30) {
-    texture = "combination";
-    textureScore = 55;
-  } else {
-    texture = "rough";
-    textureScore = 35;
-  }
-
-  // Hydration estimation based on color saturation
+  // Hydration
   const maxC = Math.max(avgR, avgG, avgB);
   const minC = Math.min(avgR, avgG, avgB);
   const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
 
-  let hydration: "well-hydrated" | "normal" | "dehydrated";
-  let hydrationScore: number;
+  let hydration: HydrationLevel;
+  let hydrationRaw: number;
+  if (saturation > 0.15) { hydration = "well-hydrated"; hydrationRaw = 8; }
+  else if (saturation > 0.08) { hydration = "normal"; hydrationRaw = 6; }
+  else { hydration = "dehydrated"; hydrationRaw = 3; }
 
-  if (saturation > 0.15) {
-    hydration = "well-hydrated";
-    hydrationScore = 80;
-  } else if (saturation > 0.08) {
-    hydration = "normal";
-    hydrationScore = 60;
-  } else {
-    hydration = "dehydrated";
-    hydrationScore = 35;
-  }
+  const undertoneRaw = Math.round(undertoneInfo.confidence / 10);
+  const depthRaw = Math.min(10, Math.max(5, Math.round(8 - Math.abs(avgBrightness - 140) / 30)));
+  const overallRaw = Math.round((textureRaw + hydrationRaw + undertoneRaw + depthRaw) / 4);
 
-  // Dominant hue
-  const hue = rgbToHueName(avgR, avgG, avgB);
-
-  // Recommendations
-  const recommendations = getRecommendations(undertone, texture, hydration);
+  const dominantHue = rgbToHueName(avgR, avgG, avgB);
+  const recommendations = getRecommendations(undertoneInfo.undertone, texture, hydration, depthInfo.depth);
 
   return {
-    undertone,
-    undertoneConfidence: Math.round(undertoneConfidence),
+    depth: depthInfo.depth,
+    depthLabel: depthInfo.label,
+    depthConcerns: depthInfo.concerns,
+    foundationNote: depthInfo.foundationNote,
+
+    undertone: undertoneInfo.undertone,
+    undertoneConfidence: Math.round(undertoneInfo.confidence),
+    veinColor: undertoneInfo.veinColor,
+    jewelryPreference: undertoneInfo.jewelryPreference,
+    sunReaction: undertoneInfo.sunReaction,
+    foundationBase: undertoneInfo.foundationBase,
+
+    shadeCode,
     texture,
-    textureScore: Math.round(textureScore),
     hydration,
-    hydrationScore: Math.round(hydrationScore),
-    dominantHue: hue,
+
+    overallScore: makeScore(overallRaw),
+    textureScore: makeScore(textureRaw),
+    hydrationScore: makeScore(hydrationRaw),
+    undertoneScore: makeScore(undertoneRaw),
+    depthScore: makeScore(depthRaw),
+
+    dominantHue,
     recommendations,
+  };
+}
+
+// === UTILITIES ===
+
+function getDefaultResult(): SkinAnalysisResult {
+  return {
+    depth: "medium", depthLabel: "N/A", depthConcerns: "N/A", foundationNote: "N/A",
+    undertone: "neutral", undertoneConfidence: 50,
+    veinColor: "N/A", jewelryPreference: "N/A", sunReaction: "N/A", foundationBase: "N/A",
+    shadeCode: { code: "N/A", label: "N/A" },
+    texture: "normal", hydration: "normal",
+    overallScore: makeScore(5), textureScore: makeScore(5), hydrationScore: makeScore(5),
+    undertoneScore: makeScore(5), depthScore: makeScore(5),
+    dominantHue: "N/A",
+    recommendations: ["Try taking the photo in better lighting."],
   };
 }
 
@@ -156,7 +312,6 @@ function rgbToHueName(r: number, g: number, b: number): string {
   else if (max === g) h = (2 + (b - r) / (max - min)) * 60;
   else h = (4 + (r - g) / (max - min)) * 60;
   if (h < 0) h += 360;
-
   if (h < 15 || h >= 345) return "Rose";
   if (h < 45) return "Peach";
   if (h < 75) return "Golden";
@@ -165,30 +320,39 @@ function rgbToHueName(r: number, g: number, b: number): string {
   return "Mauve";
 }
 
-function getRecommendations(
-  undertone: string,
-  texture: string,
-  hydration: string
-): string[] {
+function getRecommendations(undertone: string, texture: string, hydration: string, depth: SkinDepth): string[] {
   const recs: string[] = [];
 
+  // Undertone recs
   if (undertone === "warm") {
     recs.push("Earth-toned foundations with golden or peach undertones will complement your skin beautifully.");
     recs.push("Gold jewelry and warm-toned blush shades will enhance your natural glow.");
   } else if (undertone === "cool") {
     recs.push("Look for foundations with pink or blue undertones for the best match.");
     recs.push("Silver jewelry and berry-toned lip colors will complement your complexion.");
+  } else if (undertone === "olive") {
+    recs.push("Choose green-balanced yellow-based foundations to avoid ashiness.");
+    recs.push("Earthy greens, warm golds, and muted corals will look stunning on you.");
   } else {
     recs.push("You're lucky — most foundation shades work well with neutral undertones.");
     recs.push("Both gold and silver jewelry will look great on you.");
   }
 
+  // Depth recs
+  if (depth === "very-light" || depth === "light") {
+    recs.push("Use SPF 50+ daily — lighter skin is more prone to UV damage.");
+  } else if (depth === "tan" || depth === "deep" || depth === "very-deep") {
+    recs.push("Watch for ashy casts in products — test in natural light before purchasing.");
+  }
+
+  // Texture recs
   if (texture === "rough" || texture === "combination") {
     recs.push("Incorporate gentle exfoliation 2-3 times per week to refine skin texture.");
   } else {
     recs.push("Maintain your smooth texture with a consistent hydration routine.");
   }
 
+  // Hydration recs
   if (hydration === "dehydrated") {
     recs.push("Boost hydration with hyaluronic acid serums and drink more water throughout the day.");
   }
@@ -196,9 +360,7 @@ function getRecommendations(
   return recs;
 }
 
-export function getImageDataFromCanvas(
-  canvas: HTMLCanvasElement
-): ImageData | null {
+export function getImageDataFromCanvas(canvas: HTMLCanvasElement): ImageData | null {
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
