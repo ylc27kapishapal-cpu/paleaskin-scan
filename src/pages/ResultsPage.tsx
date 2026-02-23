@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useLocation, Navigate } from "react-router-dom";
-import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star } from "lucide-react";
+import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star, Sparkles } from "lucide-react";
 import type { SkinAnalysisResult, Rating } from "@/lib/skinAnalysis";
 
 const ratingColors: Record<Rating, string> = {
@@ -231,6 +231,32 @@ const ResultsPage = () => {
               </span>
             </div>
             <ScoreBar score={result.hydrationScore.score} delay={1.0} />
+          </motion.div>
+
+          {/* Wrinkle Detection */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.55 }}
+            className="bg-card rounded-2xl p-6 border border-border/50"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-lg text-foreground">Wrinkle Detection</h3>
+                <p className="font-body text-xs text-muted-foreground">Fine lines & crease analysis</p>
+              </div>
+              <ScoreBadge score={result.wrinkleScore.score} rating={result.wrinkleScore.rating} />
+            </div>
+            <div className="mb-3">
+              <span className="px-4 py-1.5 rounded-full bg-secondary text-secondary-foreground font-body text-sm font-medium capitalize">
+                {result.wrinkleLevel}
+              </span>
+            </div>
+            <ScoreBar score={result.wrinkleScore.score} delay={1.1} />
+            <p className="font-body text-xs text-muted-foreground mt-4 leading-relaxed">{result.wrinkleDetails}</p>
           </motion.div>
 
           {/* Recommendations */}

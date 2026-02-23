@@ -4,6 +4,7 @@ export type SkinDepth = "very-light" | "light" | "light-medium" | "medium" | "ta
 export type Undertone = "warm" | "cool" | "neutral" | "olive";
 export type TextureType = "smooth" | "normal" | "rough" | "combination";
 export type HydrationLevel = "well-hydrated" | "normal" | "dehydrated";
+export type WrinkleLevel = "minimal" | "mild" | "moderate" | "prominent";
 export type Rating = "Worst" | "Bad" | "Better" | "Good" | "Excellent";
 
 export interface ShadeCode {
@@ -34,9 +35,11 @@ export interface SkinAnalysisResult {
   // Shade Matrix (Level 3)
   shadeCode: ShadeCode;
 
-  // Texture & Hydration
+  // Texture, Hydration & Wrinkles
   texture: TextureType;
   hydration: HydrationLevel;
+  wrinkleLevel: WrinkleLevel;
+  wrinkleDetails: string;
 
   // Scores (1-10 with remarks)
   overallScore: ScoreWithRating;
@@ -44,6 +47,7 @@ export interface SkinAnalysisResult {
   hydrationScore: ScoreWithRating;
   undertoneScore: ScoreWithRating;
   depthScore: ScoreWithRating;
+  wrinkleScore: ScoreWithRating;
 
   dominantHue: string;
   recommendations: string[];
@@ -252,12 +256,63 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
   else if (saturation > 0.08) { hydration = "normal"; hydrationRaw = 6; }
   else { hydration = "dehydrated"; hydrationRaw = 3; }
 
+  // Wrinkle detection via high-frequency edge analysis
+  const edgeStrengths: number[] = [];
+  for (let y = cy - sampleRadius; y < cy + sampleRadius; y += 3) {
+    for (let x = cx - sampleRadius; x < cx + sampleRadius; x += 3) {
+      const px = Math.floor(x), py = Math.floor(y);
+      if (px < 1 || px >= width - 1 || py < 1 || py >= height - 1) continue;
+      const dx2 = (x - cx), dy2 = (y - cy);
+      if (dx2 * dx2 + dy2 * dy2 > sampleRadius * sampleRadius) continue;
+
+      const i0 = (py * width + px) * 4;
+      const iUp = ((py - 1) * width + px) * 4;
+      const iDown = ((py + 1) * width + px) * 4;
+      const iLeft = (py * width + (px - 1)) * 4;
+      const iRight = (py * width + (px + 1)) * 4;
+
+      const lum = (data[i0] + data[i0 + 1] + data[i0 + 2]) / 3;
+      const lumUp = (data[iUp] + data[iUp + 1] + data[iUp + 2]) / 3;
+      const lumDown = (data[iDown] + data[iDown + 1] + data[iDown + 2]) / 3;
+      const lumLeft = (data[iLeft] + data[iLeft + 1] + data[iLeft + 2]) / 3;
+      const lumRight = (data[iRight] + data[iRight + 1] + data[iRight + 2]) / 3;
+
+      const gx = lumRight - lumLeft;
+      const gy = lumDown - lumUp;
+      const edgeMag = Math.sqrt(gx * gx + gy * gy);
+      // Filter for fine lines (moderate edges, not strong object boundaries)
+      if (edgeMag > 3 && edgeMag < 40) {
+        edgeStrengths.push(edgeMag);
+      }
+    }
+  }
+
+  const avgEdge = edgeStrengths.length > 0 ? edgeStrengths.reduce((a, b) => a + b, 0) / edgeStrengths.length : 5;
+  const edgeDensity = edgeStrengths.length / (samples || 1);
+
+  let wrinkleLevel: WrinkleLevel;
+  let wrinkleRaw: number;
+  let wrinkleDetails: string;
+  if (edgeDensity < 0.15 && avgEdge < 8) {
+    wrinkleLevel = "minimal"; wrinkleRaw = 9;
+    wrinkleDetails = "Very few fine lines detected. Skin appears youthful and smooth.";
+  } else if (edgeDensity < 0.3 && avgEdge < 14) {
+    wrinkleLevel = "mild"; wrinkleRaw = 7;
+    wrinkleDetails = "Minor fine lines present, typical of healthy skin. Consider preventive care.";
+  } else if (edgeDensity < 0.5 || avgEdge < 22) {
+    wrinkleLevel = "moderate"; wrinkleRaw = 5;
+    wrinkleDetails = "Moderate fine lines and creases detected. Retinol and peptide serums recommended.";
+  } else {
+    wrinkleLevel = "prominent"; wrinkleRaw = 3;
+    wrinkleDetails = "Prominent lines and wrinkles observed. Consider targeted anti-aging treatments.";
+  }
+
   const undertoneRaw = Math.round(undertoneInfo.confidence / 10);
   const depthRaw = Math.min(10, Math.max(5, Math.round(8 - Math.abs(avgBrightness - 140) / 30)));
-  const overallRaw = Math.round((textureRaw + hydrationRaw + undertoneRaw + depthRaw) / 4);
+  const overallRaw = Math.round((textureRaw + hydrationRaw + undertoneRaw + depthRaw + wrinkleRaw) / 5);
 
   const dominantHue = rgbToHueName(avgR, avgG, avgB);
-  const recommendations = getRecommendations(undertoneInfo.undertone, texture, hydration, depthInfo.depth);
+  const recommendations = getRecommendations(undertoneInfo.undertone, texture, hydration, depthInfo.depth, wrinkleLevel);
 
   return {
     depth: depthInfo.depth,
@@ -275,12 +330,15 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
     shadeCode,
     texture,
     hydration,
+    wrinkleLevel,
+    wrinkleDetails,
 
     overallScore: makeScore(overallRaw),
     textureScore: makeScore(textureRaw),
     hydrationScore: makeScore(hydrationRaw),
     undertoneScore: makeScore(undertoneRaw),
     depthScore: makeScore(depthRaw),
+    wrinkleScore: makeScore(wrinkleRaw),
 
     dominantHue,
     recommendations,
@@ -296,8 +354,9 @@ function getDefaultResult(): SkinAnalysisResult {
     veinColor: "N/A", jewelryPreference: "N/A", sunReaction: "N/A", foundationBase: "N/A",
     shadeCode: { code: "N/A", label: "N/A" },
     texture: "normal", hydration: "normal",
+    wrinkleLevel: "mild", wrinkleDetails: "Unable to analyze — try better lighting.",
     overallScore: makeScore(5), textureScore: makeScore(5), hydrationScore: makeScore(5),
-    undertoneScore: makeScore(5), depthScore: makeScore(5),
+    undertoneScore: makeScore(5), depthScore: makeScore(5), wrinkleScore: makeScore(5),
     dominantHue: "N/A",
     recommendations: ["Try taking the photo in better lighting."],
   };
@@ -320,7 +379,7 @@ function rgbToHueName(r: number, g: number, b: number): string {
   return "Mauve";
 }
 
-function getRecommendations(undertone: string, texture: string, hydration: string, depth: SkinDepth): string[] {
+function getRecommendations(undertone: string, texture: string, hydration: string, depth: SkinDepth, wrinkleLevel?: string): string[] {
   const recs: string[] = [];
 
   // Undertone recs
@@ -355,6 +414,16 @@ function getRecommendations(undertone: string, texture: string, hydration: strin
   // Hydration recs
   if (hydration === "dehydrated") {
     recs.push("Boost hydration with hyaluronic acid serums and drink more water throughout the day.");
+  }
+
+  // Wrinkle recs
+  if (wrinkleLevel === "moderate") {
+    recs.push("Incorporate retinol (start low, 0.25%) and peptide serums to reduce fine lines.");
+  } else if (wrinkleLevel === "prominent") {
+    recs.push("Consider professional treatments like micro-needling or retinoid therapy for deeper wrinkles.");
+    recs.push("Use a rich night cream with retinol, peptides, and niacinamide for overnight repair.");
+  } else if (wrinkleLevel === "mild") {
+    recs.push("Preventive care: daily SPF and antioxidant serums will keep fine lines at bay.");
   }
 
   return recs;
