@@ -115,7 +115,10 @@ const ResultsPage = () => {
         >
           <p className="font-body text-xs text-muted-foreground uppercase tracking-widest mb-1">Your Shade Code</p>
           <p className="font-display text-2xl text-foreground tracking-wider">{result.shadeCode.code}</p>
-          <p className="font-body text-sm text-primary mt-1">{result.shadeCode.label}</p>
+          <p className="font-body text-sm text-primary mt-1">{result.shadeCode.shadeName} — {result.shadeCode.label}</p>
+          {result.shadeCode.closestProducts && result.shadeCode.closestProducts !== "N/A" && (
+            <p className="font-body text-xs text-muted-foreground mt-2">{result.shadeCode.closestProducts}</p>
+          )}
         </motion.div>
 
         {/* Cards */}
