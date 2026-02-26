@@ -1,9 +1,21 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ScanFace, Sparkles, Droplets } from "lucide-react";
+import { ScanFace, Sparkles, Droplets, AlertTriangle, Thermometer, FlaskConical, Palette, ShieldAlert, Pipette, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Index = () => {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleWaitlist = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim()) {
+      setSubmitted(true);
+      setEmail("");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}
@@ -18,6 +30,7 @@ const Index = () => {
             <a href="#about" className="hover:text-foreground transition-colors">About</a>
             <a href="#industry" className="hover:text-foreground transition-colors">The Problem</a>
             <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
+            <a href="#waitlist" className="hover:text-foreground transition-colors">Waitlist</a>
             <Link
               to="/scan"
               className="bg-primary text-primary-foreground px-6 py-2.5 rounded-full text-sm tracking-wider hover:opacity-90 transition-opacity"
@@ -129,86 +142,151 @@ const Index = () => {
         </div>
       </section>
 
-      {/* What's Wrong With the Industry */}
+      {/* What's Wrong With the Industry — Expanded */}
       <section id="industry" className="py-24 md:py-32">
-        <div className="container mx-auto px-6 max-w-4xl">
+        <div className="container mx-auto px-6 max-w-5xl">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-8"
           >
+            <p className="font-body text-xs tracking-[0.3em] uppercase text-primary mb-3">Backed by Science</p>
             <h2 className="font-display text-3xl md:text-5xl text-foreground mb-4">
               What's Wrong With the Industry
             </h2>
             <div className="w-16 h-px bg-primary mx-auto mb-6" />
-            <p className="font-serif text-lg text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
-              India's beauty challenges aren't personal — they're environmental, dermatological, and formulation-based realities backed by science.
-            </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-serif text-lg md:text-xl text-muted-foreground italic leading-relaxed max-w-3xl mx-auto text-center mb-6"
+          >
+            India's beauty challenges aren't personal — they're environmental, dermatological, and formulation-based realities. From high humidity to complex undertones, the Indian makeup experience is shaped by measurable factors — not just personal preference.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="font-body text-sm text-muted-foreground leading-relaxed max-w-3xl mx-auto text-center mb-16"
+          >
+            Research from the American Academy of Dermatology, Indian Genome Variation Consortium, and the International Journal of Cosmetic Science all point to the same conclusion: products formulated for Western climates fail in Indian conditions.
+          </motion.p>
+
+          {/* Problem Cards — 6 detailed cards */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-14">
             {[
               {
+                icon: Thermometer,
                 title: "Tropical Climate vs. Makeup Longevity",
-                desc: "With summer temperatures above 35°C and humidity exceeding 70–80%, increased sebaceous gland activity breaks down foundation films, causes separation, and reduces wear time.",
-                source: "Journal of Dermatological Science",
+                desc: "India has a predominantly tropical climate, with many cities experiencing summer temperatures above 35°C and humidity levels exceeding 70–80%. Research confirms increased heat and humidity stimulate sebaceous gland activity, leading to oilier skin that breaks down foundation films, causes separation, and drastically reduces wear time.",
+                stat: "70–80%",
+                statLabel: "humidity in most Indian cities",
+                source: "Journal of Dermatological Science; American Academy of Dermatology",
               },
               {
-                title: "Foundation Oxidation",
-                desc: "Iron oxides, oils, and environmental oxygen react together — accelerated by sebum and heat — causing foundations to darken or shift undertone after application.",
+                icon: FlaskConical,
+                title: "The Science of Foundation Oxidation",
+                desc: "Foundation oxidation occurs when pigments (especially iron oxides), oils, and environmental oxygen react together. Studies show increased sebum production and heat accelerate this reaction, causing foundations to darken by 1–3 shades or shift undertone entirely after application — turning your carefully chosen shade into the wrong colour within hours.",
+                stat: "1–3",
+                statLabel: "shades darker after oxidation",
                 source: "International Journal of Cosmetic Science",
               },
               {
+                icon: Palette,
                 title: "Undertone Diversity Ignored",
-                desc: "India is one of the most genetically diverse populations globally. Western shade systems fail to account for olive and golden undertones common in South Asian skin, leading to ashiness.",
-                source: "Journal of Investigative Dermatology",
+                desc: "India is one of the most genetically diverse populations globally. Dermatological research shows significant variation in melanin composition and undertones — olive, golden, peach, and red undertones are common in South Asian skin. Yet Western shade systems rarely account for these, leading to ashiness, grey casts, and mismatched foundations.",
+                stat: "8+",
+                statLabel: "distinct undertone categories in Indian skin",
+                source: "Indian Genome Variation Consortium; Journal of Investigative Dermatology",
               },
               {
+                icon: ShieldAlert,
                 title: "Heat, Sebum & Concealer Creasing",
-                desc: "Increased temperature affects transepidermal water loss (TEWL), impacting product adherence. Cream concealers migrate and crease without proper climate-aware formulation.",
+                desc: "Research shows that increased temperature affects transepidermal water loss (TEWL), impacting how products adhere to skin. Cream concealers require proper setting in humid climates to prevent migration and creasing — but most formulations are designed for temperate 15–22°C environments, not India's 30–45°C reality.",
+                stat: "30–45°C",
+                statLabel: "daily temperatures in Indian summers",
                 source: "British Journal of Dermatology",
+              },
+              {
+                icon: Pipette,
+                title: "Primer & Film-Forming Failures",
+                desc: "Cosmetic science literature confirms that silicone-based and polymer-based primers improve makeup adhesion and moisture resistance. However, most primers sold in India use the same formulations as those designed for dry European winters. Gel-based, humidity-adapted primers perform significantly better but remain uncommon in the market.",
+                stat: "2–3×",
+                statLabel: "better adhesion with climate-adapted primers",
+                source: "Cosmetics & Toiletries Science Journal",
+              },
+              {
+                icon: AlertTriangle,
+                title: "Transfer-Proof Lipstick Gap",
+                desc: "Transfer-proof lipsticks use volatile solvents that evaporate, leaving pigment-binding polymers that resist smudging. In high humidity, evaporation rates change — meaning formulations optimized for 40–60% humidity fail in India's 70–90% conditions, leading to smudging, feathering, and significantly reduced longevity.",
+                stat: "70–90%",
+                statLabel: "humidity where most lipsticks fail",
+                source: "Cosmetics & Toiletries Science Journal",
               },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                className="bg-card rounded-2xl p-6 border border-border/50"
+                transition={{ delay: i * 0.1 }}
+                className="bg-card rounded-2xl p-6 border border-border/50 flex flex-col"
               >
-                <h3 className="font-display text-lg text-foreground mb-2">{item.title}</h3>
-                <p className="font-body text-sm text-muted-foreground leading-relaxed mb-3">{item.desc}</p>
-                <p className="font-body text-xs text-primary/70 italic">Source: {item.source}</p>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-5 h-5 text-destructive" />
+                  </div>
+                  <h3 className="font-display text-base text-foreground leading-tight">{item.title}</h3>
+                </div>
+                <p className="font-body text-sm text-muted-foreground leading-relaxed mb-4 flex-1">{item.desc}</p>
+                <div className="bg-secondary/60 rounded-xl p-3 mb-3">
+                  <span className="font-display text-2xl text-primary">{item.stat}</span>
+                  <span className="font-body text-xs text-muted-foreground ml-2">{item.statLabel}</span>
+                </div>
+                <p className="font-body text-xs text-primary/60 italic">Source: {item.source}</p>
               </motion.div>
             ))}
           </div>
 
+          {/* Industry Gap Summary */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-primary/10 border border-primary/20 rounded-2xl p-8 text-center"
+            className="bg-primary/10 border border-primary/20 rounded-2xl p-8 md:p-10"
           >
-            <h3 className="font-display text-xl text-foreground mb-4">The Industry Gap</h3>
-            <p className="font-body text-sm text-muted-foreground leading-relaxed mb-6">
-              Most foundations sold in India are formulated for temperate Western climates — creating a mismatch between product design and real-world conditions.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-xl mx-auto">
-              {[
-                "Heat-stable pigments",
-                "Sebum-resistant formulas",
-                "Oxidation control",
-                "Undertone-calibrated shades",
-                "Barrier-supportive ingredients",
-                "Climate-intelligent design",
-              ].map((tag) => (
-                <span key={tag} className="bg-secondary text-secondary-foreground px-3 py-1.5 rounded-full font-body text-xs">
-                  {tag}
-                </span>
-              ))}
+            <div className="text-center mb-6">
+              <h3 className="font-display text-2xl text-foreground mb-3">The Bigger Industry Gap</h3>
+              <p className="font-body text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                India's climate increases sebum and accelerates oxidation. India's genetic diversity creates complex undertone variations.
+                Yet most foundations sold here are formulated for temperate Western climates — creating a fundamental mismatch between product design and real-world conditions.
+              </p>
             </div>
+            <div className="mb-6">
+              <p className="font-body text-xs text-muted-foreground uppercase tracking-widest text-center mb-4">What ideal foundations for India need</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-2xl mx-auto">
+                {[
+                  "Heat-stable pigment systems",
+                  "Sebum-resistant film formers",
+                  "Oxidation-controlled formulations",
+                  "Undertone-calibrated shade systems",
+                  "Skin-barrier supportive ingredients",
+                  "Climate-intelligent design",
+                ].map((tag) => (
+                  <span key={tag} className="bg-secondary text-secondary-foreground px-4 py-2 rounded-full font-body text-xs text-center">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <p className="font-serif text-base text-center text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
+              The opportunity lies in building climate-intelligent, undertone-accurate foundations designed specifically for Indian skin — and that's exactly what Paléa Labs is working toward.
+            </p>
           </motion.div>
         </div>
       </section>
@@ -232,6 +310,85 @@ const Index = () => {
             <p className="font-body text-sm text-muted-foreground">
               No guessing. No filters. Just your skin, understood.
             </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Join the Waitlist */}
+      <section id="waitlist" className="py-24 md:py-32">
+        <div className="container mx-auto px-6 max-w-2xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-10"
+          >
+            <p className="font-body text-xs tracking-[0.3em] uppercase text-primary mb-3">Coming Soon</p>
+            <h2 className="font-display text-3xl md:text-5xl text-foreground mb-4">
+              Join the Waitlist
+            </h2>
+            <div className="w-16 h-px bg-primary mx-auto mb-6" />
+            <p className="font-serif text-lg text-muted-foreground italic leading-relaxed">
+              Be among the first to experience climate-intelligent, undertone-accurate beauty — designed for Indian skin.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="bg-card rounded-2xl p-8 md:p-10 border border-border/50 shadow-lg"
+          >
+            {submitted ? (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-5">
+                  <CheckCircle2 className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-display text-2xl text-foreground mb-2">You're on the list!</h3>
+                <p className="font-body text-sm text-muted-foreground leading-relaxed">
+                  We'll notify you as soon as Paléa Labs launches. Get ready to discover your perfect match.
+                </p>
+              </div>
+            ) : (
+              <>
+                <form onSubmit={handleWaitlist} className="flex flex-col sm:flex-row gap-3 mb-6">
+                  <div className="relative flex-1">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      className="w-full pl-11 pr-4 py-3.5 rounded-full bg-secondary/60 border border-border text-foreground font-body text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-3.5 rounded-full font-body text-sm tracking-wider hover:opacity-90 transition-opacity whitespace-nowrap"
+                  >
+                    Join Waitlist
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </form>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {[
+                    { label: "Early Access", desc: "Be first to try our AI skin analysis" },
+                    { label: "Exclusive Updates", desc: "Behind-the-scenes R&D insights" },
+                    { label: "Launch Pricing", desc: "Special pricing for early members" },
+                  ].map((perk) => (
+                    <div key={perk.label} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-body text-xs font-medium text-foreground">{perk.label}</p>
+                        <p className="font-body text-xs text-muted-foreground">{perk.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </motion.div>
         </div>
       </section>
