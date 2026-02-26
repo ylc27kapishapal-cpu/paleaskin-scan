@@ -409,6 +409,8 @@ interface SkinSample {
   hsv: { h: number; s: number; v: number };
   variances: number[];
   edgeStrengths: number[];
+  horizontalEdges: number[];
+  laplacianValues: number[];
   samples: number;
 }
 
@@ -429,6 +431,8 @@ function sampleSkinPixels(data: Uint8ClampedArray, width: number, height: number
   let samples = 0;
   const variances: number[] = [];
   const edgeStrengths: number[] = [];
+  const horizontalEdges: number[] = [];
+  const laplacianValues: number[] = [];
 
   // Skin-tone detection: filter non-skin pixels using YCbCr
   function isSkinPixel(r: number, g: number, b: number): boolean {
@@ -468,24 +472,46 @@ function sampleSkinPixels(data: Uint8ClampedArray, width: number, height: number
           variances.push(diff);
         }
 
-        // Edge detection for wrinkles
-        if (px > 0 && px < width - 1 && py > 0 && py < height - 1) {
-          const iUp = ((py - 1) * width + px) * 4;
-          const iDown = ((py + 1) * width + px) * 4;
-          const iLeft = (py * width + (px - 1)) * 4;
-          const iRight = (py * width + (px + 1)) * 4;
+        // Enhanced multi-directional wrinkle edge detection
+        if (px > 1 && px < width - 2 && py > 1 && py < height - 2) {
+          const getLum = (ix: number, iy: number) => {
+            const idx = (iy * width + ix) * 4;
+            return 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+          };
 
-          const lum = (r + g + b) / 3;
-          const lumUp = (data[iUp] + data[iUp + 1] + data[iUp + 2]) / 3;
-          const lumDown = (data[iDown] + data[iDown + 1] + data[iDown + 2]) / 3;
-          const lumLeft = (data[iLeft] + data[iLeft + 1] + data[iLeft + 2]) / 3;
-          const lumRight = (data[iRight] + data[iRight + 1] + data[iRight + 2]) / 3;
+          const lum = getLum(px, py);
 
-          const gx = lumRight - lumLeft;
-          const gy = lumDown - lumUp;
+          // 3x3 Sobel for horizontal and vertical gradients
+          const gx = (
+            -1 * getLum(px - 1, py - 1) + 1 * getLum(px + 1, py - 1) +
+            -2 * getLum(px - 1, py) + 2 * getLum(px + 1, py) +
+            -1 * getLum(px - 1, py + 1) + 1 * getLum(px + 1, py + 1)
+          );
+          const gy = (
+            -1 * getLum(px - 1, py - 1) - 2 * getLum(px, py - 1) - 1 * getLum(px + 1, py - 1) +
+            1 * getLum(px - 1, py + 1) + 2 * getLum(px, py + 1) + 1 * getLum(px + 1, py + 1)
+          );
+
           const edgeMag = Math.sqrt(gx * gx + gy * gy);
-          if (edgeMag > 2 && edgeMag < 45) {
-            edgeStrengths.push(edgeMag);
+          // Normalize by local brightness to be fair across skin tones
+          const normalizedEdge = lum > 10 ? edgeMag / (lum / 50) : edgeMag;
+
+          const edgeAngle = Math.atan2(gy, gx) * (180 / Math.PI);
+          const absAngle = Math.abs(edgeAngle);
+
+          // Wrinkle-range edges (not too weak = noise, not too strong = features/shadows)
+          if (normalizedEdge > 3 && normalizedEdge < 60) {
+            edgeStrengths.push(normalizedEdge);
+            // Horizontal-ish edges = forehead lines, under-eye creases
+            if (absAngle < 30 || absAngle > 150) {
+              horizontalEdges.push(normalizedEdge);
+            }
+          }
+
+          // Laplacian (second-order) for fine line detection
+          const lap = getLum(px - 1, py) + getLum(px + 1, py) + getLum(px, py - 1) + getLum(px, py + 1) - 4 * lum;
+          if (Math.abs(lap) > 2 && Math.abs(lap) < 40) {
+            laplacianValues.push(Math.abs(lap));
           }
         }
       }
@@ -505,6 +531,8 @@ function sampleSkinPixels(data: Uint8ClampedArray, width: number, height: number
     hsv: rgbToHSV(avgR, avgG, avgB),
     variances,
     edgeStrengths,
+    horizontalEdges,
+    laplacianValues,
     samples,
   };
 }
@@ -517,7 +545,7 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
   const sample = sampleSkinPixels(data, width, height);
   if (!sample) return getDefaultResult();
 
-  const { avgR, avgG, avgB, brightness, lab, hsv, variances, edgeStrengths } = sample;
+  const { avgR, avgG, avgB, brightness, lab, hsv, variances, edgeStrengths, horizontalEdges, laplacianValues } = sample;
 
   // Level 1: Depth (using Lab L* for perceptual accuracy)
   const depthInfo = classifyDepth(lab.L, brightness);
@@ -547,25 +575,53 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
   else if (saturation > 0.08) { hydration = "normal"; hydrationRaw = 6; }
   else { hydration = "dehydrated"; hydrationRaw = 3; }
 
-  // Wrinkle detection
-  const avgEdge = edgeStrengths.length > 0 ? edgeStrengths.reduce((a, b) => a + b, 0) / edgeStrengths.length : 5;
-  const edgeDensity = edgeStrengths.length / (sample.samples || 1);
+  // === ENHANCED WRINKLE DETECTION ===
+  // Uses multiple independent signals to avoid giving everyone the same result
+  
+  const avgEdge = edgeStrengths.length > 0 ? edgeStrengths.reduce((a, b) => a + b, 0) / edgeStrengths.length : 3;
+  const edgeDensity = edgeStrengths.length / Math.max(sample.samples, 1);
+  
+  // Signal 1: Horizontal edge ratio — wrinkles are mostly horizontal
+  const horizRatio = horizontalEdges.length / Math.max(edgeStrengths.length, 1);
+  
+  // Signal 2: Edge strength standard deviation — wrinkles create uneven edge distribution
+  const edgeStdDev = edgeStrengths.length > 5
+    ? Math.sqrt(edgeStrengths.reduce((sum, e) => sum + (e - avgEdge) ** 2, 0) / edgeStrengths.length)
+    : 0;
+  
+  // Signal 3: High-edge percentile — top 10% edge strength captures actual wrinkles vs noise
+  const sortedEdges = [...edgeStrengths].sort((a, b) => b - a);
+  const p90Edge = sortedEdges.length > 10 ? sortedEdges[Math.floor(sortedEdges.length * 0.1)] : avgEdge;
+  
+  // Signal 4: Laplacian (fine line sensitivity)
+  const avgLap = laplacianValues.length > 0 ? laplacianValues.reduce((a, b) => a + b, 0) / laplacianValues.length : 2;
+  const lapDensity = laplacianValues.length / Math.max(sample.samples, 1);
+  
+  // Composite wrinkle score (0-100) combining independent signals
+  let wrinkleComposite = 0;
+  wrinkleComposite += clamp(edgeDensity * 80, 0, 25);          // edge density contribution
+  wrinkleComposite += clamp(horizRatio * 30, 0, 20);           // horizontal edge contribution
+  wrinkleComposite += clamp(edgeStdDev * 1.5, 0, 15);         // edge variance contribution
+  wrinkleComposite += clamp((p90Edge - 8) * 1.2, 0, 20);      // strong-edge contribution
+  wrinkleComposite += clamp(avgLap * 1.5, 0, 10);             // fine-line Laplacian contribution
+  wrinkleComposite += clamp(lapDensity * 60, 0, 10);          // Laplacian density contribution
 
   let wrinkleLevel: WrinkleLevel;
   let wrinkleRaw: number;
   let wrinkleDetails: string;
-  if (edgeDensity < 0.15 && avgEdge < 8) {
+  
+  if (wrinkleComposite < 18) {
     wrinkleLevel = "minimal"; wrinkleRaw = 9;
-    wrinkleDetails = "Very few fine lines detected. Skin appears youthful and smooth.";
-  } else if (edgeDensity < 0.3 && avgEdge < 14) {
+    wrinkleDetails = `Very few fine lines detected (score ${wrinkleComposite.toFixed(0)}/100). Skin appears youthful and smooth with minimal creasing.`;
+  } else if (wrinkleComposite < 35) {
     wrinkleLevel = "mild"; wrinkleRaw = 7;
-    wrinkleDetails = "Minor fine lines present, typical of healthy skin. Consider preventive care.";
-  } else if (edgeDensity < 0.5 || avgEdge < 22) {
+    wrinkleDetails = `Minor fine lines detected (score ${wrinkleComposite.toFixed(0)}/100). Mild expression lines present — typical of healthy skin. Preventive care recommended.`;
+  } else if (wrinkleComposite < 55) {
     wrinkleLevel = "moderate"; wrinkleRaw = 5;
-    wrinkleDetails = "Moderate fine lines and creases detected. Retinol and peptide serums recommended.";
+    wrinkleDetails = `Moderate fine lines and creases detected (score ${wrinkleComposite.toFixed(0)}/100). Visible lines around expression areas. Retinol and peptide serums recommended.`;
   } else {
     wrinkleLevel = "prominent"; wrinkleRaw = 3;
-    wrinkleDetails = "Prominent lines and wrinkles observed. Consider targeted anti-aging treatments.";
+    wrinkleDetails = `Prominent wrinkles observed (score ${wrinkleComposite.toFixed(0)}/100). Deep creases and visible lines detected. Consider targeted anti-aging treatments.`;
   }
 
   const undertoneRaw = Math.round(undertoneInfo.confidence / 10);
