@@ -16,6 +16,7 @@ const Index = () => {
           </Link>
           <div className="hidden md:flex items-center gap-8 font-body text-sm tracking-wider text-muted-foreground">
             <a href="#about" className="hover:text-foreground transition-colors">About</a>
+            <a href="#industry" className="hover:text-foreground transition-colors">The Problem</a>
             <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
             <Link
               to="/scan"
@@ -128,8 +129,92 @@ const Index = () => {
         </div>
       </section>
 
+      {/* What's Wrong With the Industry */}
+      <section id="industry" className="py-24 md:py-32">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-display text-3xl md:text-5xl text-foreground mb-4">
+              What's Wrong With the Industry
+            </h2>
+            <div className="w-16 h-px bg-primary mx-auto mb-6" />
+            <p className="font-serif text-lg text-muted-foreground italic leading-relaxed max-w-2xl mx-auto">
+              India's beauty challenges aren't personal — they're environmental, dermatological, and formulation-based realities backed by science.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            {[
+              {
+                title: "Tropical Climate vs. Makeup Longevity",
+                desc: "With summer temperatures above 35°C and humidity exceeding 70–80%, increased sebaceous gland activity breaks down foundation films, causes separation, and reduces wear time.",
+                source: "Journal of Dermatological Science",
+              },
+              {
+                title: "Foundation Oxidation",
+                desc: "Iron oxides, oils, and environmental oxygen react together — accelerated by sebum and heat — causing foundations to darken or shift undertone after application.",
+                source: "International Journal of Cosmetic Science",
+              },
+              {
+                title: "Undertone Diversity Ignored",
+                desc: "India is one of the most genetically diverse populations globally. Western shade systems fail to account for olive and golden undertones common in South Asian skin, leading to ashiness.",
+                source: "Journal of Investigative Dermatology",
+              },
+              {
+                title: "Heat, Sebum & Concealer Creasing",
+                desc: "Increased temperature affects transepidermal water loss (TEWL), impacting product adherence. Cream concealers migrate and crease without proper climate-aware formulation.",
+                source: "British Journal of Dermatology",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="bg-card rounded-2xl p-6 border border-border/50"
+              >
+                <h3 className="font-display text-lg text-foreground mb-2">{item.title}</h3>
+                <p className="font-body text-sm text-muted-foreground leading-relaxed mb-3">{item.desc}</p>
+                <p className="font-body text-xs text-primary/70 italic">Source: {item.source}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="bg-primary/10 border border-primary/20 rounded-2xl p-8 text-center"
+          >
+            <h3 className="font-display text-xl text-foreground mb-4">The Industry Gap</h3>
+            <p className="font-body text-sm text-muted-foreground leading-relaxed mb-6">
+              Most foundations sold in India are formulated for temperate Western climates — creating a mismatch between product design and real-world conditions.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-xl mx-auto">
+              {[
+                "Heat-stable pigments",
+                "Sebum-resistant formulas",
+                "Oxidation control",
+                "Undertone-calibrated shades",
+                "Barrier-supportive ingredients",
+                "Climate-intelligent design",
+              ].map((tag) => (
+                <span key={tag} className="bg-secondary text-secondary-foreground px-3 py-1.5 rounded-full font-body text-xs">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* About */}
-      <section id="about" className="py-24 md:py-32">
+      <section id="about" className="py-24 md:py-32 bg-gradient-warm">
         <div className="container mx-auto px-6 max-w-2xl text-center">
           <motion.div
             initial={{ opacity: 0 }}
