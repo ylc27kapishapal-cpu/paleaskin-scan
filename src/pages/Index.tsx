@@ -2,18 +2,32 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ScanFace, Sparkles, Droplets, AlertTriangle, Thermometer, FlaskConical, Palette, ShieldAlert, Pipette, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Index = () => {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleWaitlist = (e: React.FormEvent) => {
+  const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setSubmitted(true);
-      setEmail("");
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) return;
+    setSubmitting(true);
+    setError(null);
+    const { error: insertError } = await supabase
+      .from("waitlist")
+      .insert({ email: trimmed });
+    if (insertError && insertError.code !== "23505") {
+      setError("Something went wrong. Please try again in a moment.");
+      setSubmitting(false);
+      return;
     }
+    setSubmitted(true);
+    setSubmitting(false);
+    setEmail("");
   };
 
   return (
