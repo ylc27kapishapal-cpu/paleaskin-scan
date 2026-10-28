@@ -400,6 +400,129 @@ function getProductRecs(depth: SkinDepth, category: UndertoneCategory): string {
   return "Neutral-balanced foundations (Fenty, Dior Backstage, NARS Sheer Glow)";
 }
 
+// === INDIAN MARKET FOUNDATION DATABASE ===
+// Real foundations available across Nykaa, Amazon.in, Flipkart and Myntra,
+// mapped to the same brightness scale as SHADE_DATABASE (0-255).
+
+type Retailer = "Nykaa" | "Amazon" | "Flipkart" | "Myntra";
+
+export interface FoundationMatch {
+  brand: string;
+  product: string;
+  shade: string;
+  undertone: "warm" | "cool" | "neutral";
+  price: string;
+  finish: string;
+  note: string;
+  retailers: { name: Retailer; url: string }[];
+}
+
+interface IndianProductEntry {
+  brand: string;
+  product: string;
+  shade: string;
+  undertone: "warm" | "cool" | "neutral";
+  depthRange: [number, number]; // brightness range on the 0-255 scale
+  price: string;
+  finish: string;
+  note: string;
+  retailers: Retailer[];
+}
+
+const RETAILER_SEARCH_URLS: Record<Retailer, (query: string) => string> = {
+  Nykaa: (q) => `https://www.nykaa.com/search/result/?q=${encodeURIComponent(q)}`,
+  Amazon: (q) => `https://www.amazon.in/s?k=${encodeURIComponent(q)}`,
+  Flipkart: (q) => `https://www.flipkart.com/search?q=${encodeURIComponent(q)}`,
+  Myntra: (q) => `https://www.myntra.com/${encodeURIComponent(q.toLowerCase().replace(/\s+/g, "-"))}?rawQuery=${encodeURIComponent(q)}`,
+};
+
+const INDIAN_FOUNDATION_DB: IndianProductEntry[] = [
+  // Very Light — Porcelain / Ivory
+  { brand: "Maybelline", product: "Fit Me Matte + Poreless", shade: "110 Porcelain", undertone: "neutral", depthRange: [205, 240], price: "₹549", finish: "Matte", note: "Budget-friendly everyday base", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "L'Oréal Paris", product: "Infallible 24H Fresh Wear", shade: "20 Ivory", undertone: "neutral", depthRange: [210, 245], price: "₹1,599", finish: "Natural matte", note: "Full coverage, transfer-proof", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC15", undertone: "neutral", depthRange: [200, 232], price: "₹3,900", finish: "Satin", note: "Gold-standard neutral fair shade", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Lakmé", product: "Absolute 3D Cover", shade: "Ivory Cream", undertone: "cool", depthRange: [205, 235], price: "₹1,299", finish: "Dewy", note: "Cool-leaning ivory for pink undertones", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  // Light — Fair Beige
+  { brand: "Maybelline", product: "Fit Me Matte + Poreless", shade: "120 Classic Ivory", undertone: "neutral", depthRange: [185, 215], price: "₹549", finish: "Matte", note: "Most popular fair shade in India", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC20", undertone: "warm", depthRange: [185, 215], price: "₹3,900", finish: "Satin", note: "Warm beige, minimal oxidation", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "140G Cashew", undertone: "warm", depthRange: [190, 220], price: "₹3,950", finish: "Luminous matte", note: "Golden-fair, great for wheatish-light skin", retailers: ["Nykaa", "Amazon"] },
+  { brand: "NYX Professional Makeup", product: "Can't Stop Won't Stop 24H", shade: "06 Golden", undertone: "warm", depthRange: [178, 208], price: "₹1,799", finish: "Matte", note: "Long-wear warm light shade", retailers: ["Nykaa", "Amazon"] },
+
+  // Light-Medium — Sand / Wheatish
+  { brand: "Maybelline", product: "Fit Me Matte + Poreless", shade: "220 Natural Beige", undertone: "neutral", depthRange: [170, 200], price: "₹549", finish: "Matte", note: "Neutral wheatish shade, oxidizes little", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC25", undertone: "warm", depthRange: [170, 198], price: "₹3,900", finish: "Satin", note: "Classic wheatish-light match", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "210B Chai", undertone: "neutral", depthRange: [175, 198], price: "₹3,950", finish: "Luminous matte", note: "Peach-neutral chai shade, masks grey cast", retailers: ["Nykaa", "Amazon"] },
+  { brand: "Lakmé", product: "Absolute 3D Cover", shade: "Warm Sand", undertone: "warm", depthRange: [160, 190], price: "₹1,299", finish: "Dewy", note: "Warm sand for golden wheatish skin", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  // Medium — Golden Beige / Honey
+  { brand: "Maybelline", product: "Fit Me Matte + Poreless", shade: "230 Natural Buff", undertone: "neutral", depthRange: [148, 172], price: "₹549", finish: "Matte", note: "Neutral honey shade", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC30", undertone: "warm", depthRange: [148, 175], price: "₹3,900", finish: "Satin", note: "Golden honey — undertone precision critical here", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Estée Lauder", product: "Double Wear Stay-in-Place", shade: "3W1 Tawny", undertone: "warm", depthRange: [140, 165], price: "₹4,950", finish: "Matte", note: "Warm golden medium, 24-hour wear", retailers: ["Nykaa", "Amazon"] },
+  { brand: "Colorbar", product: "Perfect Match", shade: "004 Sand", undertone: "neutral", depthRange: [140, 170], price: "₹995", finish: "Natural", note: "Affordable Indian-brand medium shade", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  // Medium-Tan — Caramel
+  { brand: "Maybelline", product: "Fit Me Matte + Poreless", shade: "310 Warm Sun", undertone: "warm", depthRange: [122, 148], price: "₹549", finish: "Matte", note: "Warm caramel budget pick", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC35", undertone: "warm", depthRange: [120, 148], price: "₹3,900", finish: "Satin", note: "Golden caramel, avoids orange cast", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "330N Butter Pecan", undertone: "neutral", depthRange: [125, 150], price: "₹3,950", finish: "Luminous matte", note: "Neutral caramel, balances ashy cast", retailers: ["Nykaa", "Amazon"] },
+
+  // Tan — Toffee
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC40", undertone: "warm", depthRange: [100, 128], price: "₹3,900", finish: "Satin", note: "Golden toffee, no white flashback", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Maybelline", product: "Fit Me Matte + Poreless", shade: "330 Toffee", undertone: "warm", depthRange: [95, 122], price: "₹549", finish: "Matte", note: "Best budget toffee shade in India", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  // Tan-Deep — Cinnamon
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC45", undertone: "warm", depthRange: [83, 108], price: "₹3,900", finish: "Satin", note: "Warm cinnamon, red-gold balance", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "430N Gingerbread", undertone: "neutral", depthRange: [85, 112], price: "₹3,950", finish: "Luminous matte", note: "Neutral deep-caramel cult favourite", retailers: ["Nykaa", "Amazon"] },
+
+  // Deep — Espresso
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC50", undertone: "warm", depthRange: [68, 92], price: "₹3,900", finish: "Satin", note: "Rich golden espresso, low titanium dioxide", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Bobbi Brown", product: "Skin Long-Wear Weightless", shade: "Warm Espresso", undertone: "warm", depthRange: [60, 85], price: "₹4,950", finish: "Satin", note: "Deep golden, ashy-cast safe", retailers: ["Nykaa", "Amazon"] },
+
+  // Deep-Rich & Very Deep — Mahogany / Ebony
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC55", undertone: "warm", depthRange: [48, 72], price: "₹3,900", finish: "Satin", note: "Rich mahogany with true pigment", retailers: ["Nykaa", "Amazon", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "530R Coffee Bean", undertone: "warm", depthRange: [50, 80], price: "₹3,950", finish: "Luminous matte", note: "Red-warm deep shade, no grey flashback", retailers: ["Nykaa", "Amazon"] },
+  { brand: "Bobbi Brown", product: "Skin Long-Wear Weightless", shade: "Cool Espresso", undertone: "cool", depthRange: [28, 58], price: "₹4,950", finish: "Satin", note: "One of the deepest cool shades in India", retailers: ["Nykaa", "Amazon"] },
+  { brand: "NYX Professional Makeup", product: "Can't Stop Won't Stop 24H", shade: "16 Espresso", undertone: "warm", depthRange: [28, 55], price: "₹1,799", finish: "Matte", note: "Affordable deep-warm option", retailers: ["Nykaa", "Amazon"] },
+];
+
+function buildRetailerLinks(entry: IndianProductEntry): FoundationMatch["retailers"] {
+  const query = `${entry.brand} ${entry.product} ${entry.shade}`;
+  return entry.retailers.map((name) => ({ name, url: RETAILER_SEARCH_URLS[name](query) }));
+}
+
+export function getIndianFoundationMatches(brightness: number, category: UndertoneCategory): FoundationMatch[] {
+  const scored = INDIAN_FOUNDATION_DB.map((entry) => {
+    const mid = (entry.depthRange[0] + entry.depthRange[1]) / 2;
+    // Distance from brightness to the shade's range (0 when inside the range)
+    const dist = brightness < entry.depthRange[0]
+      ? entry.depthRange[0] - brightness
+      : brightness > entry.depthRange[1]
+        ? brightness - entry.depthRange[1]
+        : 0;
+
+    let score = -dist * 0.6;
+    if (entry.undertone === category) score += 8;
+    else if (entry.undertone === "neutral") score += 3; // neutrals suit any undertone
+    else score -= 6;
+
+    return { entry, score };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(({ entry }) => ({
+      brand: entry.brand,
+      product: entry.product,
+      shade: entry.shade,
+      undertone: entry.undertone,
+      price: entry.price,
+      finish: entry.finish,
+      note: entry.note,
+      retailers: buildRetailerLinks(entry),
+    }));
+}
+
 // === SKIN PIXEL SAMPLING (IMPROVED) ===
 
 interface SkinSample {
