@@ -802,6 +802,7 @@ function getDefaultResult(): SkinAnalysisResult {
     undertoneScore: makeScore(5), depthScore: makeScore(5), wrinkleScore: makeScore(5),
     dominantHue: "N/A",
     recommendations: ["Try taking the photo in better lighting."],
+    foundationMatches: [],
   };
 }
 
