@@ -50,6 +50,7 @@ export interface SkinAnalysisResult {
 
   dominantHue: string;
   recommendations: string[];
+  foundationMatches: FoundationMatch[];
 }
 
 // === HELPERS ===
@@ -783,6 +784,7 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
 
     dominantHue,
     recommendations,
+    foundationMatches: getIndianFoundationMatches(brightness, undertoneInfo.category),
   };
 }
 
