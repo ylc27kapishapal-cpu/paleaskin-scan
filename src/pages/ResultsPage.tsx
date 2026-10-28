@@ -284,6 +284,67 @@ const ResultsPage = () => {
               ))}
             </ul>
           </motion.div>
+
+          {/* Foundation Shades — Indian Markets */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="bg-card rounded-2xl p-6 border border-border/50"
+          >
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-display text-lg text-foreground">Foundation Shades — Indian Markets</h3>
+                <p className="font-body text-xs text-muted-foreground">Matched to your shade code {result.shadeCode.code}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {result.foundationMatches.map((match, i) => (
+                <div key={i} className="rounded-xl border border-border/40 p-4">
+                  <div className="flex items-start justify-between gap-3 mb-1">
+                    <div>
+                      <p className="font-display text-base text-foreground">{match.brand}</p>
+                      <p className="font-body text-xs text-muted-foreground">{match.product}</p>
+                    </div>
+                    <span className="font-body text-sm font-medium text-primary whitespace-nowrap">{match.price}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 my-3">
+                    <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 font-body text-xs font-medium text-foreground">
+                      {match.shade}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-body text-xs capitalize">
+                      {match.undertone}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground font-body text-xs">
+                      {match.finish}
+                    </span>
+                  </div>
+                  <p className="font-body text-xs text-muted-foreground leading-relaxed mb-3">{match.note}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {match.retailers.map((r) => (
+                      <a
+                        key={r.name}
+                        href={r.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground font-body text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                      >
+                        {r.name}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="font-body text-[11px] text-muted-foreground mt-4 leading-relaxed">
+              Shades are matched to your scan and open pre-filled searches on each platform. Always check the shade swatch and return policy — screens and lighting vary.
+            </p>
+          </motion.div>
         </div>
 
         {/* CTA */}
