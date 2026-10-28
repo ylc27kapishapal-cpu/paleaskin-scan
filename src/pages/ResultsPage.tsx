@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useLocation, Navigate } from "react-router-dom";
-import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star, Sparkles } from "lucide-react";
+import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star, Sparkles, ShoppingBag, ExternalLink } from "lucide-react";
 import type { SkinAnalysisResult, Rating } from "@/lib/skinAnalysis";
 
 const ratingColors: Record<Rating, string> = {
