@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ScanFace, Sparkles, Droplets, AlertTriangle, Thermometer, FlaskConical, Palette, ShieldAlert, Pipette, Mail, ArrowRight, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/clarity";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Index = () => {
@@ -28,6 +29,7 @@ const Index = () => {
     setSubmitted(true);
     setSubmitting(false);
     setEmail("");
+    trackEvent("waitlist_joined");
   };
 
   return (
@@ -47,6 +49,7 @@ const Index = () => {
             <a href="#waitlist" className="hover:text-foreground transition-colors">Waitlist</a>
             <Link
               to="/scan"
+              onClick={() => trackEvent("scan_cta_clicked")}
               className="bg-primary text-primary-foreground px-6 py-2.5 rounded-full text-sm tracking-wider hover:opacity-90 transition-opacity"
             >
               Start Scan
@@ -95,6 +98,7 @@ const Index = () => {
           >
             <Link
               to="/scan"
+              onClick={() => trackEvent("scan_cta_clicked")}
               className="inline-flex items-center gap-3 bg-primary text-primary-foreground px-10 py-4 rounded-full font-body text-sm tracking-[0.2em] uppercase hover:opacity-90 transition-all hover:scale-105"
             >
               <ScanFace className="w-5 h-5" />

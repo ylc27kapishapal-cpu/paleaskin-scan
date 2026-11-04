@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star, Sparkles, ShoppingBag, ExternalLink } from "lucide-react";
+import { trackEvent } from "@/lib/clarity";
 import type { SkinAnalysisResult, Rating } from "@/lib/skinAnalysis";
 
 const ratingColors: Record<Rating, string> = {
@@ -55,6 +57,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 const ResultsPage = () => {
   const location = useLocation();
   const state = location.state as { result: SkinAnalysisResult; image: string } | null;
+
+  useEffect(() => {
+    if (state) trackEvent("results_viewed");
+  }, [state]);
 
   if (!state) return <Navigate to="/scan" replace />;
 
@@ -331,6 +337,7 @@ const ResultsPage = () => {
                         href={r.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => trackEvent("retailer_link_clicked")}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground font-body text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
                       >
                         {r.name}

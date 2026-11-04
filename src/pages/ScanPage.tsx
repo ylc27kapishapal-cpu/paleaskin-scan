@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Camera, RotateCcw, ArrowLeft } from "lucide-react";
 import { useCamera } from "@/hooks/useCamera";
+import { trackEvent } from "@/lib/clarity";
 import { analyzeSkin, getImageDataFromCanvas, type SkinAnalysisResult } from "@/lib/skinAnalysis";
 
 const ScanPage = () => {
@@ -16,22 +17,26 @@ const ScanPage = () => {
     if (photo) {
       setCapturedImage(photo);
       stopCamera();
+      trackEvent("photo_captured");
     }
   }, [capturePhoto, stopCamera]);
 
   const handleRetake = useCallback(() => {
     setCapturedImage(null);
     startCamera();
+    trackEvent("photo_retaken");
   }, [startCamera]);
 
   const handleAnalyze = useCallback(() => {
     if (!canvasRef.current) return;
     setAnalyzing(true);
+    trackEvent("analysis_started");
 
     setTimeout(() => {
       const imageData = getImageDataFromCanvas(canvasRef.current!);
       if (imageData) {
         const result = analyzeSkin(imageData);
+        trackEvent("analysis_completed");
         navigate("/results", { state: { result, image: capturedImage } });
       }
       setAnalyzing(false);
