@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://paleaskin-scan.lovable.app/sitemap.xml
+Sitemap: https://www.palealabs.shop/sitemap.xml
