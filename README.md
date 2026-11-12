@@ -24,3 +24,12 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Payments (Razorpay)
+
+Standard Web Checkout. Orders are created and verified server-side by Vercel functions in `api/`.
+
+- `POST /api/create-order` — body `{ "product": "full_report" }`; prices are defined in `api/_lib/products.ts`.
+- `POST /api/verify-payment` — verifies the Razorpay HMAC-SHA256 signature.
+
+Setup: copy `.env.example` to `.env.local` and fill in the keys. Run `npx vercel dev` (not plain `npm run dev`) so `/api` is served locally. In production, set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` and `VITE_RAZORPAY_KEY_ID` in the Vercel project's environment variables.

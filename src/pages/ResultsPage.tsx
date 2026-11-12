@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link, useLocation, Navigate } from "react-router-dom";
 import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star, Sparkles, ShoppingBag, ExternalLink } from "lucide-react";
 import { trackEvent } from "@/lib/clarity";
+import { PayButton } from "@/components/PayButton";
 import type { SkinAnalysisResult, Rating } from "@/lib/skinAnalysis";
 
 const ratingColors: Record<Rating, string> = {
@@ -359,8 +360,9 @@ const ResultsPage = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="text-center mt-12"
+          className="text-center mt-12 flex flex-col items-center gap-4"
         >
+          <PayButton product="full_report" label="Get full skin report" priceLabel="₹499" />
           <Link
             to="/scan"
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-full font-body text-sm tracking-wider hover:opacity-90 transition-opacity"
