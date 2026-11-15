@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      skin_scan_reports: {
+        Row: {
+          analysis: Json
+          created_at: string
+          email: string
+          id: string
+          whatsapp_consent: boolean
+          whatsapp_phone: string
+        }
+        Insert: {
+          analysis: Json
+          created_at?: string
+          email: string
+          id?: string
+          whatsapp_consent?: boolean
+          whatsapp_phone: string
+        }
+        Update: {
+          analysis?: Json
+          created_at?: string
+          email?: string
+          id?: string
+          whatsapp_consent?: boolean
+          whatsapp_phone?: string
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           created_at: string
