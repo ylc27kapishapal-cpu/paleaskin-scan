@@ -1,9 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation, Navigate } from "react-router-dom";
-import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star, Sparkles, ShoppingBag, ExternalLink } from "lucide-react";
+import { ArrowLeft, ScanFace, Droplets, Layers, Palette, ChevronRight, Crown, Sun, Gem, FlaskConical, Star, Sparkles, ShoppingBag, ExternalLink, MessageCircle, LockKeyhole } from "lucide-react";
 import { trackEvent } from "@/lib/clarity";
 import { PayButton } from "@/components/PayButton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 import type { SkinAnalysisResult, Rating } from "@/lib/skinAnalysis";
 
 const ratingColors: Record<Rating, string> = {
@@ -58,6 +62,13 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 const ResultsPage = () => {
   const location = useLocation();
   const state = location.state as { result: SkinAnalysisResult; image: string } | null;
+  const [email, setEmail] = useState("");
+  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [whatsappConsent, setWhatsappConsent] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
+  const [deliveryNote, setDeliveryNote] = useState("");
 
   useEffect(() => {
     if (state) trackEvent("results_viewed");
@@ -66,6 +77,29 @@ const ResultsPage = () => {
   if (!state) return <Navigate to="/scan" replace />;
 
   const { result, image } = state;
+  const handleUnlock = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!whatsappConsent) {
+      setUnlockError("Please allow WhatsApp delivery to continue.");
+      return;
+    }
+    setSubmitting(true);
+    setUnlockError("");
+    const { data, error } = await supabase.functions.invoke("save-skin-report", {
+      body: { email: email.trim().toLowerCase(), whatsappPhone: whatsappPhone.trim(), whatsappConsent, analysis: result },
+    });
+    setSubmitting(false);
+    if (error) {
+      const detail = error instanceof Error ? error.message : "Please try again.";
+      setUnlockError(detail.includes("Failed to fetch") ? "We could not reach the report service. Please try again." : "We could not save your report. Please try again.");
+      return;
+    }
+    setUnlocked(true);
+    if (data?.whatsapp?.status === "template_pending") setDeliveryNote("Your details are saved. WhatsApp delivery will begin after our report message is approved.");
+    else if (data?.whatsapp?.status === "submitted") setDeliveryNote("Your report has been submitted to WhatsApp for delivery.");
+    else setDeliveryNote("Your details are saved, but WhatsApp delivery could not be confirmed yet.");
+    trackEvent("scan_report_unlocked");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -189,6 +223,7 @@ const ResultsPage = () => {
               <InfoRow label="Jewelry Preference" value={result.jewelryPreference} />
               <InfoRow label="Sun Reaction" value={result.sunReaction} />
               <InfoRow label="Foundation Base" value={result.foundationBase} />
+              <InfoRow label="Colours to Try" value={result.favourableColours} />
               <InfoRow label="Dominant Hue" value={result.dominantHue} />
             </div>
           </motion.div>
@@ -292,12 +327,55 @@ const ResultsPage = () => {
             </ul>
           </motion.div>
 
+          {!unlocked && (
+            <motion.section
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative overflow-hidden rounded-xl border border-border bg-card p-6"
+              aria-labelledby="shade-unlock-title"
+            >
+              <div className="pointer-events-none select-none blur-sm" aria-hidden="true">
+                <p className="font-display text-lg">Your closest foundation matches</p>
+                <p className="mt-2 text-sm text-muted-foreground">{result.foundationMatches.slice(0, 3).map((match) => `${match.brand} ${match.shade}`).join(" · ")}</p>
+                <div className="mt-3 flex gap-2"><span className="rounded-full border px-3 py-1 text-xs">Nykaa</span><span className="rounded-full border px-3 py-1 text-xs">Amazon</span><span className="rounded-full border px-3 py-1 text-xs">Myntra</span></div>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/75 px-4 text-center">
+                <LockKeyhole className="mb-2 h-5 w-5 text-primary" />
+                <h2 id="shade-unlock-title" className="font-display text-xl">Unlock your foundation matches</h2>
+                <p className="mt-1 max-w-md text-sm text-muted-foreground">Get your closest shades from seven Indian-market brands and links to Nykaa, Amazon, Myntra, and Flipkart.</p>
+              </div>
+              <form onSubmit={handleUnlock} className="relative mt-10 space-y-4 bg-card/95 p-4 sm:p-6">
+                <div className="space-y-2">
+                  <Label htmlFor="report-email">Email address</Label>
+                  <Input id="report-email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="report-phone">WhatsApp number</Label>
+                  <div className="flex items-center gap-2"><span className="shrink-0 rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">+91</span><Input id="report-phone" type="tel" inputMode="tel" autoComplete="tel-national" required maxLength={15} value={whatsappPhone} onChange={(event) => setWhatsappPhone(event.target.value)} placeholder="98765 43210" /></div>
+                </div>
+                <label className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <input type="checkbox" checked={whatsappConsent} onChange={(event) => setWhatsappConsent(event.target.checked)} className="mt-1 accent-primary" />
+                  <span>I agree to receive my skin scan report and foundation links on WhatsApp. My contact details and scan analysis will be saved for report delivery.</span>
+                </label>
+                {unlockError && <p role="alert" className="text-sm text-destructive">{unlockError}</p>}
+                <Button type="submit" disabled={submitting} className="w-full">
+                  <MessageCircle className="h-4 w-4" />
+                  {submitting ? "Saving your report…" : "Unlock shade matches"}
+                </Button>
+                <p className="text-xs text-muted-foreground">Your overview stays available without unlocking. Product links open retailer searches and shade availability can change.</p>
+              </form>
+            </motion.section>
+          )}
+          {unlocked && deliveryNote && (
+            <div role="status" className="rounded-xl border border-primary/30 bg-primary/10 p-4 text-center text-sm text-foreground">{deliveryNote}</div>
+          )}
+
           {/* Foundation Shades — Indian Markets */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="bg-card rounded-2xl p-6 border border-border/50"
+            className={`relative bg-card rounded-2xl p-6 border border-border/50 ${unlocked ? "" : "hidden"}`}
           >
             <div className="flex items-center gap-3 mb-1">
               <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">

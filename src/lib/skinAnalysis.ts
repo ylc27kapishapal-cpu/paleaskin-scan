@@ -33,6 +33,7 @@ export interface SkinAnalysisResult {
   jewelryPreference: string;
   sunReaction: string;
   foundationBase: string;
+  favourableColours: string;
 
   shadeCode: ShadeCode;
 
@@ -225,6 +226,7 @@ interface UndertoneInfo {
   jewelryPreference: string;
   sunReaction: string;
   foundationBase: string;
+  favourableColours: string;
 }
 
 function classifyUndertone(avgR: number, avgG: number, avgB: number, lab: LabColor, hsv: { h: number; s: number; v: number }): UndertoneInfo {
@@ -327,14 +329,14 @@ function classifyUndertone(avgR: number, avgG: number, avgB: number, lab: LabCol
   }
 
   const infoMap: Record<Undertone, Omit<UndertoneInfo, "undertone" | "category" | "confidence">> = {
-    "warm": { veinColor: "Green-toned veins", jewelryPreference: "Gold flatters most", sunReaction: "Tans easily with golden tone", foundationBase: "Yellow / Warm base" },
-    "cool": { veinColor: "Blue-purple veins", jewelryPreference: "Silver and platinum", sunReaction: "Burns easily, pinkish tan", foundationBase: "Pink / Blue-based" },
-    "neutral": { veinColor: "Blue-green blend veins", jewelryPreference: "Both gold & silver work", sunReaction: "Mild tan with balance", foundationBase: "Balanced / Neutral base" },
-    "warm-olive": { veinColor: "Greenish with muted warmth", jewelryPreference: "Antique gold, warm metals", sunReaction: "Tans deeply, rarely burns", foundationBase: "Green-balanced yellow base" },
-    "cool-olive": { veinColor: "Grey-green cast", jewelryPreference: "Rose gold, soft silver", sunReaction: "Tans moderately with grey cast", foundationBase: "Green-balanced neutral base" },
-    "golden": { veinColor: "Warm green veins", jewelryPreference: "Rich yellow gold", sunReaction: "Tans golden-bronze", foundationBase: "Rich golden / Yellow base" },
-    "peach": { veinColor: "Soft pink-green veins", jewelryPreference: "Rose gold suits best", sunReaction: "Light tan with peachy flush", foundationBase: "Peach / Warm-pink base" },
-    "red": { veinColor: "Deep red-blue veins", jewelryPreference: "Copper and bronze", sunReaction: "Tans with warm-red undertone", foundationBase: "Red / Warm-red base" },
+    "warm": { veinColor: "Green-toned veins", jewelryPreference: "Gold flatters most", sunReaction: "Tans easily with golden tone", foundationBase: "Yellow / Warm base", favourableColours: "Terracotta, coral, warm red, olive, and mustard" },
+    "cool": { veinColor: "Blue-purple veins", jewelryPreference: "Silver and platinum", sunReaction: "Burns easily, pinkish tan", foundationBase: "Pink / Blue-based", favourableColours: "Berry, blue-red, lavender, emerald, and cool pink" },
+    "neutral": { veinColor: "Blue-green blend veins", jewelryPreference: "Both gold & silver work", sunReaction: "Mild tan with balance", foundationBase: "Balanced / Neutral base", favourableColours: "Soft teal, dusty rose, jade, mauve, and balanced reds" },
+    "warm-olive": { veinColor: "Greenish with muted warmth", jewelryPreference: "Antique gold, warm metals", sunReaction: "Tans deeply, rarely burns", foundationBase: "Green-balanced yellow base", favourableColours: "Olive, forest green, warm teal, rust, and muted coral" },
+    "cool-olive": { veinColor: "Grey-green cast", jewelryPreference: "Rose gold, soft silver", sunReaction: "Tans moderately with grey cast", foundationBase: "Green-balanced neutral base", favourableColours: "Pine green, plum, slate teal, muted berry, and charcoal" },
+    "golden": { veinColor: "Warm green veins", jewelryPreference: "Rich yellow gold", sunReaction: "Tans golden-bronze", foundationBase: "Rich golden / Yellow base", favourableColours: "Saffron, marigold, warm coral, turquoise, and cream" },
+    "peach": { veinColor: "Soft pink-green veins", jewelryPreference: "Rose gold suits best", sunReaction: "Light tan with peachy flush", foundationBase: "Peach / Warm-pink base", favourableColours: "Peach, apricot, warm pink, soft aqua, and ivory" },
+    "red": { veinColor: "Deep red-blue veins", jewelryPreference: "Copper and bronze", sunReaction: "Tans with warm-red undertone", foundationBase: "Red / Warm-red base", favourableColours: "Cobalt, burgundy, deep teal, rose, and warm neutrals" },
   };
 
   return { undertone, category, confidence: Math.round(confidence), ...infoMap[undertone] };
@@ -444,6 +446,40 @@ const INDIAN_FOUNDATION_DB: IndianProductEntry[] = [
   { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC15", undertone: "neutral", depthRange: [200, 232], price: "₹3,900", finish: "Satin", note: "Gold-standard neutral fair shade", retailers: ["Nykaa", "Amazon", "Myntra"] },
   { brand: "Lakmé", product: "Absolute 3D Cover", shade: "Ivory Cream", undertone: "cool", depthRange: [205, 235], price: "₹1,299", finish: "Dewy", note: "Cool-leaning ivory for pink undertones", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
 
+  // Additional scan-match candidates; ranges are approximate display estimates.
+  { brand: "L'Oréal Paris", product: "Infallible 24H Tinted Serum", shade: "2–3 Light", undertone: "neutral", depthRange: [190, 225], price: "Check retailer", finish: "Dewy", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "L'Oréal Paris", product: "Infallible 24H Tinted Serum", shade: "3–4 Light-Medium", undertone: "warm", depthRange: [160, 195], price: "Check retailer", finish: "Dewy", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "L'Oréal Paris", product: "Infallible 24H Tinted Serum", shade: "4–5 Medium", undertone: "warm", depthRange: [130, 165], price: "Check retailer", finish: "Dewy", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "L'Oréal Paris", product: "Infallible 24H Tinted Serum", shade: "5–6 Medium-Tan", undertone: "warm", depthRange: [100, 138], price: "Check retailer", finish: "Dewy", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "L'Oréal Paris", product: "Infallible 24H Tinted Serum", shade: "7–8 Tan", undertone: "neutral", depthRange: [65, 108], price: "Check retailer", finish: "Dewy", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  { brand: "Swiss Beauty", product: "High Performance Foundation", shade: "01 White Ivory", undertone: "cool", depthRange: [205, 240], price: "Check retailer", finish: "Natural", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Swiss Beauty", product: "High Performance Foundation", shade: "Classic Ivory", undertone: "neutral", depthRange: [185, 220], price: "Check retailer", finish: "Natural", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Swiss Beauty", product: "High Performance Foundation", shade: "03 Natural Beige", undertone: "warm", depthRange: [150, 190], price: "Check retailer", finish: "Natural", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Swiss Beauty", product: "High Performance Foundation", shade: "Natural Buff", undertone: "neutral", depthRange: [125, 165], price: "Check retailer", finish: "Natural", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Swiss Beauty", product: "High Performance Foundation", shade: "Medium Beige", undertone: "warm", depthRange: [95, 140], price: "Check retailer", finish: "Natural", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Swiss Beauty", product: "High Performance Foundation", shade: "Sun Beige", undertone: "warm", depthRange: [55, 110], price: "Check retailer", finish: "Natural", note: "Approximate depth match; compare swatches before buying", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  { brand: "MARS", product: "High Coverage Liquid Foundation", shade: "Shade 02", undertone: "neutral", depthRange: [185, 225], price: "Check retailer", finish: "Natural matte", note: "Shade depth is an estimate; preview the retailer swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MARS", product: "High Coverage Liquid Foundation", shade: "03 Natural Beige", undertone: "warm", depthRange: [140, 185], price: "Check retailer", finish: "Natural matte", note: "Shade depth is an estimate; preview the retailer swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MARS", product: "Zero Blend Weightless Foundation", shade: "08 Honey Nectar", undertone: "warm", depthRange: [75, 135], price: "Check retailer", finish: "Natural", note: "Shade depth is an estimate; preview the retailer swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC18", undertone: "neutral", depthRange: [190, 220], price: "Check retailer", finish: "Satin", note: "Approximate depth match; confirm your MAC shade in natural light", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC37", undertone: "warm", depthRange: [125, 155], price: "Check retailer", finish: "Satin", note: "Approximate depth match; confirm your MAC shade in natural light", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC42", undertone: "warm", depthRange: [85, 115], price: "Check retailer", finish: "Satin", note: "Approximate depth match; confirm your MAC shade in natural light", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC55", undertone: "warm", depthRange: [35, 72], price: "Check retailer", finish: "Satin", note: "Approximate depth match; confirm your MAC shade in natural light", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "110N Angel Food", undertone: "neutral", depthRange: [215, 245], price: "Check retailer", finish: "Luminous matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "220N Custard", undertone: "neutral", depthRange: [165, 198], price: "Check retailer", finish: "Luminous matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "320G Tres Leches", undertone: "warm", depthRange: [125, 158], price: "Check retailer", finish: "Luminous matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "410G Brown Sugar", undertone: "warm", depthRange: [90, 125], price: "Check retailer", finish: "Luminous matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Huda Beauty", product: "#FauxFilter Luminous Matte", shade: "560R Ganache", undertone: "warm", depthRange: [35, 68], price: "Check retailer", finish: "Luminous matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
+  { brand: "Lakmé", product: "9 To 5 Powerplay Priming Foundation", shade: "Cool Rose", undertone: "cool", depthRange: [195, 235], price: "Check retailer", finish: "Matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Lakmé", product: "9 To 5 Powerplay Priming Foundation", shade: "W120 Warm Crème", undertone: "warm", depthRange: [145, 190], price: "Check retailer", finish: "Matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Lakmé", product: "9 To 5 Powerplay Priming Foundation", shade: "Warm Beige", undertone: "warm", depthRange: [95, 145], price: "Check retailer", finish: "Matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+  { brand: "Lakmé", product: "9 To 5 Powerplay Priming Foundation", shade: "Warm Sand", undertone: "warm", depthRange: [55, 100], price: "Check retailer", finish: "Matte", note: "Approximate depth match; confirm with an in-person swatch", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
+
   // Light — Fair Beige
   { brand: "Maybelline", product: "Fit Me Matte + Poreless", shade: "120 Classic Ivory", undertone: "neutral", depthRange: [185, 215], price: "₹549", finish: "Matte", note: "Most popular fair shade in India", retailers: ["Nykaa", "Amazon", "Flipkart", "Myntra"] },
   { brand: "MAC", product: "Studio Fix Fluid SPF 15", shade: "NC20", undertone: "warm", depthRange: [185, 215], price: "₹3,900", finish: "Satin", note: "Warm beige, minimal oxidation", retailers: ["Nykaa", "Amazon", "Myntra"] },
@@ -492,7 +528,8 @@ function buildRetailerLinks(entry: IndianProductEntry): FoundationMatch["retaile
 }
 
 export function getIndianFoundationMatches(brightness: number, category: UndertoneCategory): FoundationMatch[] {
-  const scored = INDIAN_FOUNDATION_DB.map((entry) => {
+  const requestedBrands = ["Maybelline", "L'Oréal Paris", "Swiss Beauty", "MARS", "MAC", "Huda Beauty", "Lakmé"];
+  const scored = INDIAN_FOUNDATION_DB.filter((entry) => requestedBrands.includes(entry.brand)).map((entry) => {
     const mid = (entry.depthRange[0] + entry.depthRange[1]) / 2;
     // Distance from brightness to the shade's range (0 when inside the range)
     const dist = brightness < entry.depthRange[0]
@@ -509,19 +546,23 @@ export function getIndianFoundationMatches(brightness: number, category: Underto
     return { entry, score };
   });
 
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map(({ entry }) => ({
+  return requestedBrands.flatMap((brand) => {
+    const closest = scored
+      .filter((candidate) => candidate.entry.brand === brand)
+      .sort((a, b) => b.score - a.score)[0];
+    if (!closest) return [];
+    const { entry } = closest;
+    return [{
       brand: entry.brand,
       product: entry.product,
       shade: entry.shade,
       undertone: entry.undertone,
-      price: entry.price,
+      price: "Check retailer",
       finish: entry.finish,
       note: entry.note,
       retailers: buildRetailerLinks(entry),
-    }));
+    }];
+  });
 }
 
 // === SKIN PIXEL SAMPLING (IMPROVED) ===
@@ -768,6 +809,7 @@ export function analyzeSkin(imageData: ImageData): SkinAnalysisResult {
     jewelryPreference: undertoneInfo.jewelryPreference,
     sunReaction: undertoneInfo.sunReaction,
     foundationBase: undertoneInfo.foundationBase,
+    favourableColours: undertoneInfo.favourableColours,
 
     shadeCode,
     texture,
@@ -794,7 +836,7 @@ function getDefaultResult(): SkinAnalysisResult {
   return {
     depth: "medium", depthLabel: "N/A", depthConcerns: "N/A", foundationNote: "N/A",
     undertone: "neutral", undertoneCategory: "neutral", undertoneConfidence: 50,
-    veinColor: "N/A", jewelryPreference: "N/A", sunReaction: "N/A", foundationBase: "N/A",
+    veinColor: "N/A", jewelryPreference: "N/A", sunReaction: "N/A", foundationBase: "N/A", favourableColours: "N/A",
     shadeCode: { code: "N/A", label: "N/A", shadeName: "N/A", closestProducts: "N/A" },
     texture: "normal", hydration: "normal",
     wrinkleLevel: "mild", wrinkleDetails: "Unable to analyze — try better lighting.",
